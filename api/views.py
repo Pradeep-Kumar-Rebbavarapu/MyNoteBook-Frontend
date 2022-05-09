@@ -141,8 +141,10 @@ class AddNote(CreateAPIView):
     serializer_class = NoteSerializer
 
 class GetUserNotes(ListAPIView):
-    
-    print('gettign users notes')
+    filter_backends = [SearchFilter]
+    search_fields = ['title','desc']
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         user = self.request.user
