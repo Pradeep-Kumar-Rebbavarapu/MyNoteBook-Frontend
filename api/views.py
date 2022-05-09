@@ -32,6 +32,8 @@ from rest_framework.filters import SearchFilter
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.contrib.auth import authenticate
+from django.middleware import csrf
 def home(request):
     return HttpResponse('hello')
 
@@ -41,74 +43,38 @@ class Signup(CreateAPIView):
     serializer_class = UserSerializer
 
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        refresh = self.get_token(self.user)
-        data["refresh"] = str(refresh)   # comment out if you don't want this
-        data["access"] = str(refresh.access_token)
-        data["email"] = self.user.email
-        data["username"] = self.user.username
-        """ Add extra responses here should you wish
-        data["userid"] = self.user.id
-        data["my_favourite_bird"] = "Jack Snipe"
-        """
-        return data
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
 
-
-class MyObtainTokenPairView(TokenObtainPairView):
-    serializer_class = MyTokenObtainPairSerializer
-    
-    def post(self, request, *args, **kwargs):
-        # you need to instantiate the serializer with the request data
-        serializer = self.serializer_class(data=request.data)
-        # you must call .is_valid() before accessing validated_data
-        serializer.is_valid(raise_exception=True)  
-
-        # get access and refresh tokens to do what you like with
-        access = serializer.validated_data.get("access", None)
-        refresh = serializer.validated_data.get("refresh", None)
-        email = serializer.validated_data.get("email", None)
-        username = serializer.validated_data.get("username", None)
-        print(access)
-
-        # build your response and set cookie
-        if access is not None:
-            response = Response({"access": access, "refresh": refresh, "email": email,"username":username}, status=200)
-            response.set_cookie('token', access, httponly=True,samesite='None', secure=False,expires=datetime.datetime.now() + datetime.timedelta(days=2))
-            response.set_cookie('refresh', refresh, httponly=True,samesite='None', secure=False,expires=datetime.datetime.now() + datetime.timedelta(days=2))
-            response.set_cookie('email', email, httponly=False,samesite='None', secure=True,expires=datetime.datetime.now() + datetime.timedelta(days=2))
-            response.set_cookie('username',username, httponly=False,samesite='None', secure=True,expires=datetime.datetime.now() + datetime.timedelta(days=2))
-            return response
-
-        return Response({"Error": "Something went wrong"},statuc=status.HTTP_400_BAD_REQUEST)
-
-class Login(APIView):
-    def post(self,request):
-        username = request.data['username']
-        password = request.data['password']
-        email = request.data['email']
-        response = Response()
-        # checking for errors
-        user = User.objects.filter(username=username).first()
-        print(user)
-        if user is None:
-                    return Response({'error': 'invalid username or password'}, status=status.HTTP_404_NOT_FOUND)
-        if not user.check_password(password):
-                    return Response({'error': 'invalid username or password'},status=status.HTTP_404_NOT_FOUND)
-        else:
-            if email == user.email:
-                    refresh = RefreshToken.for_user(user)
-                    print('access token',str(refresh.access_token))
-                    response.set_cookie('accesstoken',str(refresh.access_token))
-                    response.set_cookie('refreshtoken',str(refresh))
-                    return Response({
-                        'refresh': str(refresh),
-                        'access': str(refresh.access_token)},
-                        status=status.HTTP_200_OK)
+class LoginView(APIView):
+    def post(self, request, format=None):
+        data = request.data
+        response = Response()        
+        username = data.get('username', None)
+        password = data.get('password', None)
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            if user.is_active:
+                data = get_tokens_for_user(user)
+                response.set_cookie(
+                    key = settings.SIMPLE_JWT['AUTH_COOKIE'], 
+                    value = data["access"],
+                    expires = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'],
+                    secure = settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+                    httponly = settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+                    samesite = settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
+                )
+                csrf.get_token(request)
+                response.data = {"Success" : "Login successfully","data":data}
+                return response
             else:
-                return Response({'errors':'email not matched'},status=status.HTTP_404_NOT_FOUND)
+                return Response({"No active" : "This account is not active!!"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({"Invalid" : "Invalid username or password!!"}, status=status.HTTP_404_NOT_FOUND)
 
 class getUser(APIView):
     authentication_classes = [JWTAuthentication]

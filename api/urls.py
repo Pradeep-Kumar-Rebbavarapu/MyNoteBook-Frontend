@@ -23,7 +23,7 @@ urlpatterns = [
     path('Signup/',Signup.as_view()),
     # path('send_otp/',send_otp.as_view()),
     # path('verify_otp/',verify_otp.as_view()),
-    path('Login/',MyObtainTokenPairView.as_view()),
+    path('Login/',LoginView.as_view()),
     path('GetUser/',getUser.as_view()),
     path('AddNote/',AddNote.as_view()),
     path('GetUserNotes/',GetUserNotes.as_view()),
