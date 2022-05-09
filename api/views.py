@@ -76,10 +76,10 @@ class MyObtainTokenPairView(TokenObtainPairView):
         # build your response and set cookie
         if access is not None:
             response = Response({"access": access, "refresh": refresh, "email": email,"username":username}, status=200)
-            response.set_cookie('token', access, httponly=True,samesite=None, secure=True,domain=".app.localhost")
-            response.set_cookie('refresh', refresh, httponly=True,samesite=None, secure=True,domain=".app.localhost")
-            response.set_cookie('email', email, httponly=True,samesite=None, secure=True,domain=".app.localhost")
-            response.set_cookie('username',username, httponly=True,samesite=None, secure=True,domain=".app.localhost")
+            response.set_cookie('token', access, httponly=True,samesite='None', secure=True,domain=".app.localhost")
+            response.set_cookie('refresh', refresh, httponly=True,samesite='None', secure=True,domain=".app.localhost")
+            response.set_cookie('email', email, httponly=True,samesite='None', secure=True,domain=".app.localhost")
+            response.set_cookie('username',username, httponly=True,samesite='None', secure=True,domain=".app.localhost")
             return response
 
         return Response({"Error": "Something went wrong"},statuc=status.HTTP_400_BAD_REQUEST)
