@@ -171,6 +171,7 @@ SIMPLE_JWT = {
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000' # Here was the problem indeed and it has to be http://localhost:3000, not http://localhost:3000/
+    'http://127.0.0.1:3000' # Here was the problem indeed and it has to be http://localhost:3000, not http://localhost:3000/
 ]
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
@@ -179,3 +180,4 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SAMESITE = 'None'
+CORS_EXPOSE_HEADERS = ["Content-Type","X_CSRFToken"]
