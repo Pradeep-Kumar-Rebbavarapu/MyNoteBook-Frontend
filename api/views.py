@@ -33,6 +33,7 @@ import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import authenticate
+from backend import settings
 from django.middleware import csrf
 def home(request):
     return HttpResponse('hello')
